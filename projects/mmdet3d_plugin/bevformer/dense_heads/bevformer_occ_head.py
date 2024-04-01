@@ -57,6 +57,7 @@ class BEVFormerOccHead(BaseModule):
                  loss_flow=None,
                  use_mask=False,
                  positional_encoding=None,
+                 lovasz_loss=None,
                  **kwargs):
 
         self.bev_h = bev_h
@@ -87,6 +88,9 @@ class BEVFormerOccHead(BaseModule):
         if not self.as_two_stage:
             self.bev_embedding = nn.Embedding(
                 self.bev_h * self.bev_w, self.embed_dims)
+        
+        if lovasz_loss is not None:
+            self.loss_lovasz = build_loss(lovasz_loss)
 
     def init_weights(self):
         """Initialize weights of the DeformDETR head."""
@@ -173,13 +177,14 @@ class BEVFormerOccHead(BaseModule):
         loss_dict=dict()
         occ=preds_dicts['occ']
         flow=preds_dicts['flow']
-        loss_occ, loss_flow = self.loss_single(voxel_semantics,voxel_flow,mask_camera,occ,flow)
-        loss_dict['loss_occ']=loss_occ
-        loss_dict['loss_flow']=loss_flow
+        loss_single_dict = self.loss_single(voxel_semantics,voxel_flow,mask_camera,occ,flow)
+
+        loss_dict.update(loss_single_dict)
         return loss_dict
 
     def loss_single(self,voxel_semantics,voxel_flow,mask_camera,occ,flow):
         voxel_semantics=voxel_semantics.long()
+        loss_dict = dict()
         if self.use_mask:
             voxel_semantics=voxel_semantics.reshape(-1)
             occ=occ.reshape(-1,self.num_classes)
@@ -193,7 +198,14 @@ class BEVFormerOccHead(BaseModule):
             loss_occ = self.loss_occ(occ, voxel_semantics,)
             flow = flow.reshape(-1, 2)
             loss_flow = self.loss_flow(flow, voxel_flow)
-        return loss_occ, loss_flow
+
+        if hasattr(self, 'loss_lovasz'):
+            loss_lovasz = self.loss_lovasz(F.softmax(occ, dim=1), voxel_semantics)
+            loss_dict['loss_lovasz'] = loss_lovasz
+
+        loss_dict['loss_occ']=loss_occ
+        loss_dict['loss_flow']=loss_flow
+        return loss_dict
 
     @force_fp32(apply_to=('preds'))
     def get_occ(self, preds_dicts, img_metas, rescale=False):
