@@ -23,6 +23,9 @@ from projects.mmdet3d_plugin.models.utils.bricks import run_time
 from mmcv.runner import force_fp32, auto_fp16
 from mmcv.cnn import PLUGIN_LAYERS, Conv2d,Conv3d, ConvModule, caffe2_xavier_init
 
+from projects.mmdet3d_plugin.bevformer.modules.SSCNet import SSCNet
+
+
 @TRANSFORMER.register_module()
 class TransformerOcc(BaseModule):
     """Implements the Detr3D transformer.
@@ -56,6 +59,8 @@ class TransformerOcc(BaseModule):
                  act_cfg=dict(type='ReLU',inplace=True),
                  norm_cfg=dict(type='BN', ),
                  norm_cfg_3d=dict(type='BN3d', ),
+                 use_sscnet=False,
+                 nPlanes=[16, 16, 16, 16, 16],
                  **kwargs):
         super(TransformerOcc, self).__init__(**kwargs)
         self.encoder = build_transformer_layer_sequence(encoder)
@@ -74,6 +79,10 @@ class TransformerOcc(BaseModule):
         self.use_conv=use_conv
         self.pillar_h = pillar_h
         self.out_dim=out_dim
+
+        if use_sscnet:
+            assert use_3d, 'sscnet only support 3d'
+            
         if not use_3d:
             if use_conv:
                 use_bias = norm_cfg is None
@@ -107,28 +116,32 @@ class TransformerOcc(BaseModule):
             use_bias_3d = norm_cfg_3d is None
 
             self.middle_dims=self.embed_dims//pillar_h
-            self.decoder = nn.Sequential(
-                ConvModule(
-                    self.middle_dims,
-                    self.out_dim,
-                    kernel_size=3,
-                    stride=1,
-                    padding=1,
-                    bias=use_bias_3d,
-                    conv_cfg=dict(type='Conv3d'),
-                    norm_cfg=norm_cfg_3d,
-                    act_cfg=act_cfg),
-                ConvModule(
-                    self.out_dim,
-                    self.out_dim,
-                    kernel_size=3,
-                    stride=1,
-                    padding=1,
-                    bias=use_bias_3d,
-                    conv_cfg=dict(type='Conv3d'),
-                    norm_cfg=norm_cfg_3d,
-                    act_cfg=act_cfg),
-            )
+
+            if use_sscnet:
+                self.decoder = SSCNet(self.middle_dims, nPlanes, self.out_dim)
+            else:
+                self.decoder = nn.Sequential(
+                    ConvModule(
+                        self.middle_dims,
+                        self.out_dim,
+                        kernel_size=3,
+                        stride=1,
+                        padding=1,
+                        bias=use_bias_3d,
+                        conv_cfg=dict(type='Conv3d'),
+                        norm_cfg=norm_cfg_3d,
+                        act_cfg=act_cfg),
+                    ConvModule(
+                        self.out_dim,
+                        self.out_dim,
+                        kernel_size=3,
+                        stride=1,
+                        padding=1,
+                        bias=use_bias_3d,
+                        conv_cfg=dict(type='Conv3d'),
+                        norm_cfg=norm_cfg_3d,
+                        act_cfg=act_cfg),
+                )
         self.predicter = nn.Sequential(
             nn.Linear(self.out_dim, self.out_dim*2),
             nn.Softplus(),

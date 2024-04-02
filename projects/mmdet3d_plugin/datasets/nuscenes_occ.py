@@ -119,7 +119,7 @@ class NuSceneOcc(NuScenesDataset):
                     lidar2cam=lidar2cam_rts,
                 ))
 
-        if not self.test_mode:
+        if not self.test_mode and 'LightwheelOcc' not in self.version:
             annos = self.get_ann_info(index)
             input_dict['ann_info'] = annos
 

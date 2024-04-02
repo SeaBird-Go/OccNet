@@ -8,6 +8,7 @@ import copy
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from einops import repeat, rearrange
 from mmcv.cnn import Linear, bias_init_with_prob
 from mmcv.utils import TORCH_VERSION, digit_version
 
@@ -28,6 +29,8 @@ from mmcv.cnn.bricks.transformer import build_positional_encoding
 from mmdet.models.utils import build_transformer
 from mmdet.models.builder import build_loss
 from mmcv.runner import BaseModule, force_fp32
+
+from projects.mmdet3d_plugin.bevformer.losses.loss_utils import geo_scal_loss, sem_scal_loss
 
 @HEADS.register_module()
 class BEVFormerOccHead(BaseModule):
@@ -58,6 +61,7 @@ class BEVFormerOccHead(BaseModule):
                  use_mask=False,
                  positional_encoding=None,
                  lovasz_loss=None,
+                 use_surroundocc_loss=False,
                  **kwargs):
 
         self.bev_h = bev_h
@@ -71,7 +75,7 @@ class BEVFormerOccHead(BaseModule):
         if self.as_two_stage:
             transformer['as_two_stage'] = self.as_two_stage
 
-
+        self.use_surroundocc_loss = use_surroundocc_loss
         self.pc_range = pc_range
         self.real_w = self.pc_range[3] - self.pc_range[0]
         self.real_h = self.pc_range[4] - self.pc_range[1]
@@ -185,6 +189,12 @@ class BEVFormerOccHead(BaseModule):
     def loss_single(self,voxel_semantics,voxel_flow,mask_camera,occ,flow):
         voxel_semantics=voxel_semantics.long()
         loss_dict = dict()
+
+        if self.use_surroundocc_loss:
+            preds_tmp = rearrange(occ, 'b h w d c -> b c h w d')
+            loss_dict['loss_sem_scal'] = sem_scal_loss(preds_tmp, voxel_semantics)
+            loss_dict['loss_geo_scal'] = geo_scal_loss(preds_tmp, voxel_semantics)
+        
         if self.use_mask:
             voxel_semantics=voxel_semantics.reshape(-1)
             occ=occ.reshape(-1,self.num_classes)
