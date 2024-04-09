@@ -11,7 +11,7 @@ from mmdet3d.core import bbox3d2result
 from mmdet3d.models.detectors.mvx_two_stage import MVXTwoStageDetector
 from projects.mmdet3d_plugin.models.utils.grid_mask import GridMask
 import time
-import copy
+import os
 import numpy as np
 import mmdet3d
 from projects.mmdet3d_plugin.models.utils.bricks import run_time
@@ -243,6 +243,15 @@ class BEVFormerOcc(MVXTwoStageDetector):
         new_prev_bev, occ_results, flow_results = self.simple_test(
             img_metas[0], img[0], prev_bev=None, **kwargs)
         # During inference, we save the BEV features and ego motion of each timestamp.
+
+        # For test server
+        # self.occupancy_save_path = "results/OpenOcc/OccNet"
+        if self.occupancy_save_path is not None:
+            os.makedirs(self.occupancy_save_path, exist_ok=True)
+            sample_token = img_metas[0][0]['sample_idx']
+            save_pred_occupancy = occ_results.cpu().numpy().astype(np.uint8)
+            save_path = os.path.join(self.occupancy_save_path, f'{sample_token}.npz')
+            np.savez_compressed(save_path, semantics=save_pred_occupancy) 
 
         return {
             'occ_results': occ_results.byte().cpu(),
