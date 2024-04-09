@@ -19,13 +19,9 @@ class LoadOccGTFromFile(object):
         pass
 
     def __call__(self, results):
-        if results['occ_path'] is not None and os.path.exists(results['occ_path']):
-            occ_labels = np.load(results['occ_path'])
-            semantics = occ_labels['semantics']
-            flow = occ_labels['flow']
-        else:
-            semantics = np.zeros([200, 200, 16], dtype=np.uint8)
-            flow = np.zeros([200, 200, 16, 2], dtype=np.float32)
+        occ_labels = np.load(results['occ_path'])
+        semantics = occ_labels['semantics']
+        flow = occ_labels['flow']
         
         results['voxel_semantics'] = semantics
         results['voxel_flow'] = flow

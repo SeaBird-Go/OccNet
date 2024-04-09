@@ -246,6 +246,7 @@ class BEVFormerOcc(MVXTwoStageDetector):
 
         # For test server
         # self.occupancy_save_path = "results/OpenOcc/OccNet"
+        self.occupancy_save_path = None
         if self.occupancy_save_path is not None:
             os.makedirs(self.occupancy_save_path, exist_ok=True)
             sample_token = img_metas[0][0]['sample_idx']

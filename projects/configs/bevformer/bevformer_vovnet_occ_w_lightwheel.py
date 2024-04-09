@@ -92,7 +92,7 @@ model = dict(
             loss_weight=1.0),
         lovasz_loss=dict(
             type='LovaszLoss'),
-        loss_flow=dict(type='L1Loss', loss_weight=0.25),
+        loss_flow=dict(type='L1Loss', loss_weight=1.0),
         transformer=dict(
             type='TransformerOcc',
             pillar_h=16,
@@ -235,8 +235,8 @@ data = dict(
              pipeline=test_pipeline, filter_empty_gt=False,
              classes=class_names, modality=input_modality, samples_per_gpu=1),
     test=dict(type=nusc_dataset_type,
-              data_root=nusc_data_root,
-              ann_file=nusc_data_root + 'nuscenes_infos_val_occ.pkl',
+              data_root=light_data_root,
+              ann_file=light_data_root + 'lightwheel_occ_infos_val.pkl',
               pipeline=test_pipeline, filter_empty_gt=False,
               classes=class_names, modality=input_modality),
     shuffler_sampler=dict(type='DistributedGroupSampler'),
