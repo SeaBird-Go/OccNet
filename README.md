@@ -16,9 +16,11 @@
 Understanding the 3D surroundings including the background stuffs and foreground objects is important for autonomous driving. In the traditional 3D object detection task, a foreground object is represented by the 3D bounding box. However, the geometrical shape of the object is complex, which can not be represented by a simple 3D box, and the perception of the background stuffs is absent. The goal of this task is to predict the 3D occupancy of the scene. In this task, we provide a large-scale occupancy benchmark based on the nuScenes dataset. The benchmark is a voxelized representation of the 3D space, and the occupancy state and semantics of the voxel in 3D space are jointly estimated in this task. The complexity of this task lies in the dense prediction of 3D space given the surround-view images.
 
 ## News
-> :fire: We are organizing a sibling track in `China3DV`. Please check the [competition website](http://www.csig3dv.net/2024/competition.html) and [github repo](https://github.com/OpenDriveLab/LightwheelOcc/blob/main/docs/challenge_china3dv.md).  
-> :ice_cube: We release a 3D occupancy synthetic dataset `LightwheelOcc`, with dense **occupancy** and **depth** label and realistic sensor configuration simulating nuScenes dataset. [Check it out](https://github.com/OpenDriveLab/LightwheelOcc)!
+> [!TIP]
+> :ice_cube: We release a 3D occupancy synthetic dataset **LightwheelOcc**, with dense occupancy and depth label and realistic sensor configuration simulating nuScenes dataset. [Check it out](https://github.com/OpenDriveLab/LightwheelOcc)!
 
+- **`2024/07/12`** Test server reopen.
+- **`2024/06/01`** The challenge wraps up.
 - **`2024/04/09`** We release the [technical report](https://arxiv.org/abs/2312.17118) of the new RayIoU metric, as well as a new occupancy method: [SparseOcc](https://github.com/MCG-NJU/SparseOcc).
 - **`2024/03/14`** We release a new version (`openocc_v2.1`) of the occupancy ground-truth, including some bug fixes regarding the occupancy flow. **Delete the old version and download the new one!** Please refer to [getting_started](docs/getting_started.md) for details.
 - **`2024/03/01`** The challenge begins.
